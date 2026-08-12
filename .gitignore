@@ -1,0 +1,15 @@
+# python
+backend/.venv/
+__pycache__/
+*.pyc
+backend/wolfie.db
+backend/wolfie.db-wal
+backend/wolfie.db-shm
+backend/.env
+
+# node
+frontend/node_modules/
+frontend/dist/
+
+# misc
+.DS_Store

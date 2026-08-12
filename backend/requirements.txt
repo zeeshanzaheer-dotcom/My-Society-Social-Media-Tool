@@ -1,0 +1,6 @@
+# Core — that's all you need to run the app (SQLite is in the Python stdlib).
+fastapi>=0.110
+uvicorn[standard]>=0.29
+
+# Optional: only needed if you set AI_PROVIDER=anthropic for real Claude generation.
+# anthropic>=0.40
