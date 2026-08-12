@@ -68,6 +68,10 @@ class GenerateReq(BaseModel):
     objective: str = ""
 
 
+class AnalystQ(BaseModel):
+    question: str = ""
+
+
 class FromRec(BaseModel):
     account_id: Optional[int] = None
     format: str = "reel"
@@ -437,6 +441,33 @@ def ai_generate(body: GenerateReq):
             raise HTTPException(400, str(exc))
     finally:
         conn.close()
+
+
+@router.post("/ai/analyst")
+def ai_analyst(body: AnalystQ):
+    """The AI Analyst: answers a plain-language question about performance,
+    grounded in the analytics + recommendations. Mock by default, Claude if set."""
+    q = (body.question or "").strip()
+    if not q:
+        raise HTTPException(400, "Ask a question first.")
+    conn = get_conn()
+    try:
+        brand = row_to_dict(conn.execute("SELECT * FROM brands ORDER BY id LIMIT 1").fetchone()) or {}
+    finally:
+        conn.close()
+    summ = analytics.summary()
+    context = {
+        "totals": summ.get("totals"),
+        "formats": summ.get("formats"),
+        "topics": summ.get("topics"),
+        "best": summ.get("best"),
+        "synced": summ.get("synced", []),
+        "recommendations": analytics.recommendations(limit=3),
+    }
+    try:
+        return get_provider().answer(brand, q, context)
+    except RuntimeError as exc:
+        raise HTTPException(400, str(exc))
 
 
 # --- analytics + recommendations (the learning half of the loop) -------------

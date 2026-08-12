@@ -70,6 +70,7 @@ export const api = {
   runDue: () => req("POST", "/jobs/run-due", {}),
   cancelJob: (id: number) => req("POST", `/jobs/${id}/cancel`, {}),
   generate: (b: any) => req("POST", "/ai/generate", b),
+  analyst: (question: string) => req("POST", "/ai/analyst", { question }),
   analytics: () => req("GET", "/analytics/summary"),
   recommendations: () => req("GET", "/recommendations"),
   createFromRec: (b: any) => req("POST", "/create-from-recommendation", b),

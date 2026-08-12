@@ -15,7 +15,7 @@ function localInputDefault(hoursAhead = 1) {
 type Toast = { msg: string; bad?: boolean } | null;
 
 export default function App() {
-  const [tab, setTab] = useState<"home" | "ideas" | "calendar" | "approvals" | "create" | "publish" | "analytics" | "brand" | "connectors" | "profile">("home");
+  const [tab, setTab] = useState<"home" | "ideas" | "calendar" | "approvals" | "create" | "publish" | "analytics" | "analyst" | "brand" | "connectors" | "profile">("home");
   const [role, setRole] = useState<"Manager" | "Creator">("Manager");
   const [tick, setTick] = useState(0);
   const [toastMsg, setToastRaw] = useState<Toast>(null);
@@ -89,6 +89,7 @@ export default function App() {
               { key: "approvals", ico: "✅", label: "Approvals", badge: inReview },
               { key: "publish", ico: "🚀", label: "Publish log" },
               { key: "analytics", ico: "📊", label: "Analytics" },
+              { key: "analyst", ico: "🤖", label: "AI Analyst", sub: "Ask about your performance" },
             ]} />
           <NavMenu id="settings" label="Settings" tab={tab} nav={nav} menu={menu} setMenu={setMenu}
             items={[
@@ -120,6 +121,7 @@ export default function App() {
       {tab === "create" && <CreateView {...ctx} />}
       {tab === "publish" && <PublishView {...ctx} />}
       {tab === "analytics" && <AnalyticsView {...ctx} />}
+      {tab === "analyst" && <AnalystView {...ctx} />}
       {tab === "brand" && <BrandBrainView {...ctx} />}
       {tab === "connectors" && <ConnectorsView {...ctx} />}
       {tab === "profile" && <ProfileView {...ctx} goTab={setTab} />}
@@ -399,6 +401,85 @@ function ProfileView({ tick, goTab }: Ctx & { goTab: (t: any) => void }) {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ================= AI ANALYST — ask about your performance ================= */
+// render **bold** + paragraph breaks from the analyst's plain-text answer
+function renderMd(text: string) {
+  return text.split("\n\n").map((para, i) => (
+    <p key={i} style={{ margin: i === 0 ? 0 : "8px 0 0" }}>
+      {para.split(/(\*\*[^*]+\*\*)/g).map((seg, j) =>
+        seg.startsWith("**") && seg.endsWith("**")
+          ? <strong key={j}>{seg.slice(2, -2)}</strong>
+          : <span key={j}>{seg}</span>,
+      )}
+    </p>
+  ));
+}
+
+const ANALYST_SUGGESTIONS = [
+  "What's my best-performing format?",
+  "What should I post next?",
+  "Which topic is working best?",
+  "How's my engagement overall?",
+];
+
+function AnalystView({ }: Ctx) {
+  const [msgs, setMsgs] = useState<{ role: "user" | "ai"; text: string; provider?: string }[]>([]);
+  const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const ask = async (question: string) => {
+    const text = question.trim();
+    if (!text || busy) return;
+    setMsgs((m) => [...m, { role: "user", text }]);
+    setQ(""); setBusy(true);
+    try {
+      const r = await api.analyst(text);
+      setMsgs((m) => [...m, { role: "ai", text: r.answer, provider: r.provider }]);
+    } catch (e: any) {
+      setMsgs((m) => [...m, { role: "ai", text: e.message || "Something went wrong.", provider: "error" }]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="feedsolo">
+      <div className="head"><div><h2>AI Analyst</h2><p>Ask about your performance — answered from your real numbers.</p></div></div>
+
+      <div className="analyst">
+        {msgs.length === 0 && (
+          <div className="analyst-empty">
+            <div className="analyst-ava">🤖</div>
+            <p style={{ maxWidth: 380, margin: "0 auto" }}>Hi — I'm your analyst. Ask me what's working, what to post next, or which format wins.</p>
+          </div>
+        )}
+        {msgs.map((m, i) => (
+          <div key={i} className={"amsg " + m.role}>
+            {m.role === "ai" && <div className="analyst-ava sm">🤖</div>}
+            <div className="abubble">
+              {renderMd(m.text)}
+              {m.role === "ai" && m.provider && m.provider !== "error" && (
+                <div className="tiny" style={{ marginTop: 6, opacity: 0.6 }}>via {m.provider === "anthropic" ? "Claude" : "built-in analyst"}</div>
+              )}
+            </div>
+          </div>
+        ))}
+        {busy && <div className="amsg ai"><div className="analyst-ava sm">🤖</div><div className="abubble analyst-typing">Analysing your numbers…</div></div>}
+      </div>
+
+      {msgs.length === 0 && (
+        <div className="achips">
+          {ANALYST_SUGGESTIONS.map((s) => <button key={s} className="achip" disabled={busy} onClick={() => ask(s)}>{s}</button>)}
+        </div>
+      )}
+      <div className="abar">
+        <input placeholder="Ask about your performance…" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ask(q)} />
+        <button className="btn btn-primary btn-sm" disabled={busy || !q.trim()} onClick={() => ask(q)}>Ask</button>
       </div>
     </div>
   );
