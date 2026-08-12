@@ -6,13 +6,15 @@ busy timeout keep the API and the background scheduler out of each other's way.
 """
 from __future__ import annotations
 
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "wolfie.db"
+# Overridable so serverless hosts (Vercel) can point at their only writable dir, /tmp.
+DB_PATH = Path(os.getenv("WOLFIE_DB_PATH", str(BASE_DIR / "wolfie.db")))
 
 
 def utcnow_iso() -> str:
@@ -223,6 +225,7 @@ def _migrate(conn: sqlite3.Connection) -> None:
 
 
 def init_db() -> None:
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)  # e.g. /tmp on serverless
     conn = get_conn()
     try:
         conn.executescript(SCHEMA)

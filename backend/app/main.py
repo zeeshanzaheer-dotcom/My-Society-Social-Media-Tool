@@ -20,22 +20,34 @@ from . import scheduler, seed
 from .api import router
 
 
+import os
+
+# Serverless hosts (Vercel) can't run a long-lived background loop — skip the
+# publish engine there. Everything else (feed, profile, analytics) still works.
+_SERVERLESS = bool(os.getenv("WOLFIE_DISABLE_SCHEDULER") or os.getenv("VERCEL"))
+
+
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     seed.seed_if_empty()
-    scheduler.start()
+    if not _SERVERLESS:
+        scheduler.start()
     try:
         yield
     finally:
-        await scheduler.stop()
+        if not _SERVERLESS:
+            await scheduler.stop()
 
 
 app = FastAPI(title="Wolfie API", version="0.1.0", lifespan=lifespan)
 
-# Vite dev server proxies /api, but allow direct browser access too.
+# Vite dev server proxies /api, but allow direct browser access too. Override with
+# CORS_ORIGINS (comma-separated) in production; defaults to open for the demo.
+_cors = os.getenv("CORS_ORIGINS", "*").strip()
+_origins = ["*"] if _cors == "*" else [o.strip() for o in _cors.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
