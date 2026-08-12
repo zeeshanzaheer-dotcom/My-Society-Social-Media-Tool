@@ -223,7 +223,8 @@ button{font-family:inherit;cursor:pointer}
 .askpanel .abubble{max-width:88%;font-size:13.5px}
 .askpanel .achips{margin-bottom:0}
 /* compose FAB + modal */
-.composefab{position:fixed;right:22px;bottom:22px;width:58px;height:58px;border-radius:50%;border:none;background:var(--coral);color:#fff;font-size:23px;cursor:pointer;box-shadow:0 12px 30px -6px rgba(110,98,214,.6);z-index:60;display:grid;place-items:center;transition:transform .12s}
+.composefab{position:fixed;right:22px;bottom:22px;width:58px;height:58px;border-radius:50%;border:none;background:#1D9BF0;color:#fff;cursor:pointer;box-shadow:0 12px 30px -6px rgba(29,155,240,.55);z-index:60;display:grid;place-items:center;transition:transform .12s,background .12s}
+.composefab:active{background:#1A8CD8}
 .composefab:hover{transform:translateY(-2px) scale(1.04)}
 .composeoverlay{position:fixed;inset:0;background:rgba(20,20,30,.42);z-index:80;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px;overflow-y:auto;animation:fade .14s ease}
 @keyframes fade{from{opacity:0}to{opacity:1}}

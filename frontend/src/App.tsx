@@ -206,7 +206,9 @@ function ComposeFab({ bump, toast }: { bump: () => void; toast: (m: string, bad?
           </div>
         </div>
       )}
-      <button className="composefab" title="Create a post" onClick={() => setOpen(true)}>✏️</button>
+      <button className="composefab" title="Create a post" onClick={() => setOpen(true)} aria-label="Create a post">
+        <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+      </button>
     </>
   );
 }
