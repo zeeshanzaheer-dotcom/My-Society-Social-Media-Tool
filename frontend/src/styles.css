@@ -306,13 +306,12 @@ button{font-family:inherit;cursor:pointer}
 .composer-inline .citext{width:100%;border:none;background:none;resize:none;font-family:inherit;font-size:19px;color:var(--ink);outline:none;line-height:1.4;padding:8px 0;min-height:34px;overflow:hidden}
 .composer-inline .citext::placeholder{color:var(--ink-3)}
 .cbar{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--border);padding-top:10px;margin-top:6px}
-.ctools{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
-.citool{width:34px;height:34px;border-radius:50%;border:none;background:none;color:var(--coral-ink);font-size:16px;cursor:pointer;display:grid;place-items:center;transition:background .12s}
-.citool:hover{background:var(--coral-soft)}
-.cbar-sep{width:1px;height:22px;background:var(--border);margin:0 6px;flex:none}
-.citogp{border:none;background:none;padding:2px;cursor:pointer;border-radius:9px;opacity:.4;filter:grayscale(1);transition:opacity .12s,filter .12s,box-shadow .12s}
-.citogp:hover{opacity:.85;filter:none}
-.citogp.on{opacity:1;filter:none;box-shadow:0 0 0 2px var(--coral-soft)}
+.cbar-right{display:flex;align-items:center;gap:12px}
+.cplusbtn{width:34px;height:34px;border-radius:50%;border:1px solid var(--border-2);background:var(--surface);color:var(--coral-ink);font-size:22px;font-weight:500;line-height:1;cursor:pointer;display:grid;place-items:center;transition:background .12s,box-shadow .12s}
+.cplusbtn:hover{background:var(--coral-soft)}
+.cplusbtn.on{background:var(--coral-soft);box-shadow:0 0 0 2px var(--coral-soft)}
+.cplus-dd{left:0;right:auto;min-width:230px}
+.dd-sep{height:1px;background:var(--border);margin:6px 8px}
 /* desktop shows the inline composer; the FAB is for mobile only */
 @media(min-width:641px){.composefab{display:none}}
 .composer textarea{width:100%;border:none;background:none;resize:none;font-family:inherit;font-size:16px;color:var(--ink);outline:none;line-height:1.45}

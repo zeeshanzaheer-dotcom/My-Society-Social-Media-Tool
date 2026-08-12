@@ -127,8 +127,16 @@ function InlineComposer({ toast, onPosted }: { toast: (m: string, bad?: boolean)
   const [media, setMedia] = useState<string[]>([]);
   const [plats, setPlats] = useState<string[]>(["linkedin"]);
   const [busy, setBusy] = useState(false);
+  const [plusOpen, setPlusOpen] = useState(false);
   const imgRef = useRef<HTMLInputElement>(null);
   const vidRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!plusOpen) return;                          // close the +menu on any outside click
+    const h = () => setPlusOpen(false);
+    document.addEventListener("click", h);
+    return () => document.removeEventListener("click", h);
+  }, [plusOpen]);
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
@@ -172,18 +180,30 @@ function InlineComposer({ toast, onPosted }: { toast: (m: string, bad?: boolean)
           </div>
         )}
         <div className="cbar">
-          <div className="ctools">
-            <button className="citool" title="Add photos" onClick={() => imgRef.current?.click()}>🖼</button>
-            <button className="citool" title="Add video" onClick={() => vidRef.current?.click()}>🎬</button>
-            <span className="cbar-sep" />
-            {ALL_PLATFORMS.map((p) => (
-              <button key={p} className={"citogp" + (plats.includes(p) ? " on" : "")}
-                title={(plats.includes(p) ? "Posting to " : "Post to ") + (PLAT_LABEL[p] || p)} onClick={() => togglePlat(p)}>
-                <span className={`acc ${p}`} style={{ width: 22, height: 22, borderRadius: 6 }}><PlatSvg p={p} size={13} /></span>
-              </button>
-            ))}
+          <div className="menu-wrap" onClick={(e) => e.stopPropagation()}>
+            <button className={"cplusbtn" + (plusOpen ? " on" : "")} title="Add media & platforms" onClick={() => setPlusOpen((v) => !v)}>+</button>
+            {plusOpen && (
+              <div className="dropdown cplus-dd">
+                <div className="dd-label">Add media</div>
+                <button className="dd-item" onClick={() => imgRef.current?.click()}><span className="dd-ico">🖼</span><span className="dd-txt">Photos<small>One or more images</small></span></button>
+                <button className="dd-item" onClick={() => vidRef.current?.click()}><span className="dd-ico">🎬</span><span className="dd-txt">Video</span></button>
+                <div className="dd-sep" />
+                <div className="dd-label">Post to</div>
+                <div className="cplatrow" style={{ padding: "2px 8px 8px" }}>
+                  {ALL_PLATFORMS.map((p) => (
+                    <button key={p} className={"cplat" + (plats.includes(p) ? " on" : "")} onClick={() => togglePlat(p)}>
+                      <span className={`acc ${p}`} style={{ width: 18, height: 18, borderRadius: 5 }}><PlatSvg p={p} size={12} /></span>
+                      {PLAT_LABEL[p] || p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-          <button className="btn btn-primary" disabled={!canPost} onClick={post}>{busy ? "Posting…" : "Post"}</button>
+          <div className="cbar-right">
+            <span className="tiny">{plats.length ? `${plats.length} platform${plats.length > 1 ? "s" : ""}` : "Pick a platform"}</span>
+            <button className="btn btn-primary" disabled={!canPost} onClick={post}>{busy ? "Posting…" : "Post"}</button>
+          </div>
         </div>
         <input ref={imgRef} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.currentTarget.value = ""; }} />
         <input ref={vidRef} type="file" accept="video/*" hidden onChange={(e) => { addFiles(e.target.files); e.currentTarget.value = ""; }} />
