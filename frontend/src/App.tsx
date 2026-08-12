@@ -126,8 +126,74 @@ export default function App() {
       {tab === "connectors" && <ConnectorsView {...ctx} />}
       {tab === "profile" && <ProfileView {...ctx} goTab={setTab} />}
 
+      <AskBubble />
       {toastMsg &&<div className={"toast" + (toastMsg.bad ? " bad" : "")}>{toastMsg.msg}</div>}
     </div>
+  );
+}
+
+/* ================= floating AI chat bubble (opens the Analyst anywhere) ================= */
+function AskBubble() {
+  const [open, setOpen] = useState(false);
+  const [msgs, setMsgs] = useState<{ role: "user" | "ai"; text: string; provider?: string }[]>([]);
+  const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const ask = async (question: string) => {
+    const text = question.trim();
+    if (!text || busy) return;
+    setMsgs((m) => [...m, { role: "user", text }]);
+    setQ(""); setBusy(true);
+    try {
+      const r = await api.analyst(text);
+      setMsgs((m) => [...m, { role: "ai", text: r.answer, provider: r.provider }]);
+    } catch (e: any) {
+      setMsgs((m) => [...m, { role: "ai", text: e.message || "Something went wrong.", provider: "error" }]);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      {open && (
+        <div className="askpanel">
+          <div className="askhead">
+            <div><b>🤖 AI Analyst</b><div className="tiny">Ask about your performance</div></div>
+            <button className="askclose" onClick={() => setOpen(false)} title="Close">✕</button>
+          </div>
+          <div className="askbody">
+            {msgs.length === 0 && (
+              <div className="askhi">Hi — I'm your analyst. Ask me what's working, what to post next, or which format wins.</div>
+            )}
+            {msgs.map((m, i) => (
+              <div key={i} className={"amsg " + m.role}>
+                {m.role === "ai" && <div className="analyst-ava sm">🤖</div>}
+                <div className="abubble">
+                  {renderMd(m.text)}
+                  {m.role === "ai" && m.provider && m.provider !== "error" && (
+                    <div className="tiny" style={{ marginTop: 6, opacity: 0.6 }}>via {m.provider === "anthropic" ? "Claude" : "built-in analyst"}</div>
+                  )}
+                </div>
+              </div>
+            ))}
+            {busy && <div className="amsg ai"><div className="analyst-ava sm">🤖</div><div className="abubble analyst-typing">Analysing…</div></div>}
+            {msgs.length === 0 && (
+              <div className="achips" style={{ marginTop: 10 }}>
+                {ANALYST_SUGGESTIONS.map((s) => <button key={s} className="achip" disabled={busy} onClick={() => ask(s)}>{s}</button>)}
+              </div>
+            )}
+          </div>
+          <div className="abar">
+            <input placeholder="Ask about your performance…" value={q} onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === "Enter" && ask(q)} />
+            <button className="btn btn-primary btn-sm" disabled={busy || !q.trim()} onClick={() => ask(q)}>Ask</button>
+          </div>
+        </div>
+      )}
+      <button className={"askfab" + (open ? " on" : "")} onClick={() => setOpen((o) => !o)} title="Ask the AI Analyst">
+        {open ? "✕" : "🤖"}
+      </button>
+    </>
   );
 }
 
