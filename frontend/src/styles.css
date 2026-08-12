@@ -359,17 +359,16 @@ button{font-family:inherit;cursor:pointer}
 @media(max-width:640px){
   .app{padding:0 14px 96px}
   .composer-inline{display:none}
-  /* header — keep on one row, larger tap targets */
-  .top{gap:6px;padding:10px 0 12px}
+  /* header — keep on one row, larger tap targets; opaque (no backdrop-filter) so
+     the fixed menu panels anchor to the viewport, not the header */
+  .top{gap:6px;padding:10px 0 12px;background:var(--bg);backdrop-filter:none}
   .menus{gap:6px}
   .menu-btn{padding:8px 12px;font-size:13px;min-height:40px}
   .menu-btn .chev{display:none}
   .bell{padding:10px 11px;min-height:40px;min-width:40px}
   .profbtn{padding:3px}
-  /* menus + notifications stay on-screen */
-  .menus .dropdown{left:auto;right:0}
-  .dropdown{min-width:0;width:calc(100vw - 28px);max-width:calc(100vw - 28px)}
-  .notif-dd{width:calc(100vw - 28px)}
+  /* menus + notifications: fixed full-width panels under the header (never clip off-screen) */
+  .menus .dropdown,.notif-dd{position:fixed;top:70px;left:12px;right:12px;width:auto;min-width:0;max-width:none;max-height:calc(100dvh - 90px);overflow-y:auto}
   /* feed — horizontally scrolling filter strip, bigger action taps */
   .feedplats{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -14px 10px;padding:2px 14px 12px}
   .feedplats::-webkit-scrollbar{display:none}
