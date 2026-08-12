@@ -1,17 +1,19 @@
 :root{
-  --bg:#FAFAFB; --surface:#fff; --surface-2:#F3F3F5; --surface-3:#E9E9EC; --border:#E8E8EB; --border-2:#DCDCE0;
-  --ink:#1B1B1F; --ink-2:#67676E; --ink-3:#9A9AA2;
-  --coral:#6E62D6; --coral-soft:#ECEAFB; --coral-ink:#574BC0;
+  /* palette matched to askwolfie.com — light ground, near-black ink, soft-lavender accent */
+  --bg:#F8F8F9; --surface:#fff; --surface-2:#F1F1F3; --surface-3:#E8E8EB; --border:#E9E9EC; --border-2:#DDDDE1;
+  --ink:#0A0A0A; --ink-2:#56565C; --ink-3:#8A8A90;
+  --accent:#E5D5FF; --accent-hover:#D7C1FF; --accent-ink:#0A0A0A;
+  --coral:#8B5CF6; --coral-soft:#E5D5FF; --coral-ink:#6D28D9;
   --teal:#6E9E8B; --teal-soft:#EDF2EF; --teal-ink:#4E7C6A;
   --amber:#B98A34; --amber-soft:#F4EEDF; --amber-ink:#876325;
   --rose:#C25B60; --rose-soft:#F6E8E9; --rose-ink:#A5474C;
-  --violet:#6E62D6; --violet-soft:#ECEAFB;
+  --violet:#8B5CF6; --violet-soft:#E5D5FF;
   --shadow:0 1px 2px rgba(20,20,30,.05),0 10px 26px -14px rgba(20,20,30,.14);
   --font:"Segoe UI Variable",system-ui,-apple-system,"Helvetica Neue",sans-serif;
   --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
 }
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;-webkit-font-smoothing:antialiased;overflow-x:clip}
 h1,h2,h3{margin:0;letter-spacing:-.01em}
 button{font-family:inherit;cursor:pointer}
 .tnum{font-variant-numeric:tabular-nums}
@@ -39,12 +41,12 @@ button{font-family:inherit;cursor:pointer}
 .acc.facebook{background:#1877F2}.acc.linkedin{background:#0A66C2}.acc.tiktok{background:#111}.acc.twitter{background:#000}.acc.youtube{background:#FF0000}
 
 /* top-right dropdown menus */
-.menus{display:flex;align-items:center;gap:2px}
+.menus{display:flex;align-items:center;gap:8px}
 .menu-wrap{position:relative}
-.menu-btn{border:1px solid transparent;background:none;color:var(--ink-2);border-radius:10px;padding:8px 12px;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:6px;transition:background .14s,color .14s,border-color .14s}
-.menu-btn:hover{background:var(--surface-2);color:var(--ink)}
-.menu-btn.on{background:var(--surface);color:var(--ink);border-color:var(--border);box-shadow:var(--shadow)}
-.menu-btn .chev{font-size:10px;color:var(--ink-3)}
+.menu-btn{border:1px solid transparent;background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:9px 16px;font-weight:700;font-size:14px;display:inline-flex;align-items:center;gap:6px;transition:background .14s,box-shadow .14s}
+.menu-btn:hover{background:var(--accent-hover)}
+.menu-btn.on{background:var(--accent-hover);box-shadow:var(--shadow)}
+.menu-btn .chev{font-size:10px;color:var(--accent-ink);opacity:.55}
 .dropdown{position:absolute;top:calc(100% + 8px);right:0;min-width:250px;max-width:calc(100vw - 24px);z-index:60;background:var(--surface);border:1px solid var(--border);border-radius:14px;box-shadow:0 18px 44px -12px rgba(20,20,30,.22);padding:6px;animation:pop .16s ease}
 /* left-side menus open toward the right so they never overflow the left edge; the right-side bell keeps right:0 */
 .menus .dropdown{left:0;right:auto}
@@ -92,10 +94,11 @@ button{font-family:inherit;cursor:pointer}
 .head p{margin:4px 0 0;color:var(--ink-2);font-size:14px}
 
 /* buttons */
-.btn{border:1px solid var(--border-2);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 13px;font-weight:700;font-size:13.5px;display:inline-flex;align-items:center;gap:7px;transition:transform .1s,box-shadow .1s}
+.btn{border:1px solid var(--border-2);background:var(--surface);color:var(--ink);border-radius:999px;padding:9px 15px;font-weight:700;font-size:13.5px;display:inline-flex;align-items:center;gap:7px;transition:transform .1s,box-shadow .1s,background .12s}
 .btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
 .btn:disabled{opacity:.5;cursor:default;transform:none;box-shadow:none}
-.btn-primary{background:var(--coral);border-color:var(--coral);color:#fff}
+.btn-primary{background:var(--accent);border-color:transparent;color:var(--accent-ink)}
+.btn-primary:hover{background:var(--accent-hover)}
 .btn-ghost{background:none;border-color:transparent}
 .btn-ghost:hover{background:var(--surface-2)}
 .btn-sm{padding:6px 10px;font-size:12.5px}
@@ -156,7 +159,7 @@ button{font-family:inherit;cursor:pointer}
 .err{background:var(--rose-soft);color:var(--rose-ink);font-size:11.5px;padding:2px 8px;border-radius:7px;display:inline-block}
 
 /* toast */
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;font-size:13.5px;box-shadow:var(--shadow);z-index:50}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:700;font-size:13.5px;box-shadow:var(--shadow);z-index:50;max-width:calc(100vw - 24px);box-sizing:border-box}
 .toast.bad{background:var(--rose)}
 .empty{padding:34px;text-align:center;color:var(--ink-3);font-weight:600}
 
@@ -171,7 +174,7 @@ button{font-family:inherit;cursor:pointer}
 .rec .plat{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:800;color:var(--ink-2)}
 .rec h3{font-size:16.5px;margin-top:8px;line-height:1.25}
 .ideacard{display:flex;gap:14px;padding:16px;margin-bottom:14px}
-.ideachips{display:flex;align-items:center;gap:7px}
+.ideachips{display:flex;align-items:center;gap:7px;flex-wrap:wrap;row-gap:6px}
 .ideaactions{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
 /* my profile */
 .profbtn{border:1px solid var(--border-2);background:var(--surface);border-radius:50%;padding:2px;display:grid;place-items:center;cursor:pointer;transition:box-shadow .1s,transform .1s}
@@ -274,7 +277,7 @@ button{font-family:inherit;cursor:pointer}
 
 /* ---------- home: the network feed ---------- */
 .feedwrap{display:grid;grid-template-columns:1fr 322px;gap:26px;align-items:start}
-@media(max-width:860px){.feedwrap{grid-template-columns:1fr}.feedside{display:none}}
+@media(max-width:860px){.feedwrap{grid-template-columns:1fr}.feedside{position:static}}
 .feedmain{min-width:0}
 .feedsolo{max-width:640px;margin:0 auto}
 .composer-right{display:flex;align-items:center;gap:8px}
@@ -311,7 +314,7 @@ button{font-family:inherit;cursor:pointer}
 .fplat.instagram{background:linear-gradient(135deg,#F58529,#DD2A7B 55%,#8134AF)}
 .fplat.facebook{background:#1877F2}.fplat.linkedin{background:#0A66C2}.fplat.tiktok{background:#111}.fplat.twitter{background:#000}.fplat.youtube{background:#FF0000}
 .fplat.wolfie{background:var(--coral-soft);color:var(--coral-ink)}
-.ftext{font-size:15px;margin:5px 0 8px;line-height:1.5;white-space:pre-wrap}
+.ftext{font-size:15px;margin:5px 0 8px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
 .fmedia{height:190px;border-radius:14px;border:1px solid var(--border);display:flex;align-items:flex-end;padding:12px;font-size:12.5px;font-weight:700;color:#fff;background:linear-gradient(135deg,#8A8A93,#3C3C44);text-shadow:0 1px 6px rgba(0,0,0,.45)}
 .media-sunset{background:linear-gradient(135deg,#9186E2,#C25B60)}
 .media-skyline{background:linear-gradient(150deg,#3C3C44,#6E62D6)}
@@ -339,3 +342,51 @@ button{font-family:inherit;cursor:pointer}
 .trend b{display:block;font-size:14px;margin:1px 0}
 .follow{display:flex;align-items:center;gap:10px;padding:8px 0}
 .follow b{font-size:13.5px}
+
+/* ============ mobile (phones) ============ */
+@media(max-width:640px){
+  .app{padding:0 14px 96px}
+  /* header — keep on one row, larger tap targets */
+  .top{gap:6px;padding:10px 0 12px}
+  .menus{gap:6px}
+  .menu-btn{padding:8px 12px;font-size:13px;min-height:40px}
+  .menu-btn .chev{display:none}
+  .bell{padding:10px 11px;min-height:40px;min-width:40px}
+  .profbtn{padding:3px}
+  /* menus + notifications stay on-screen */
+  .menus .dropdown{left:auto;right:0}
+  .dropdown{min-width:0;width:calc(100vw - 28px);max-width:calc(100vw - 28px)}
+  .notif-dd{width:calc(100vw - 28px)}
+  /* feed — horizontally scrolling filter strip, bigger action taps */
+  .feedplats{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 -14px 10px;padding:2px 14px 12px}
+  .feedplats::-webkit-scrollbar{display:none}
+  .feedplats .platpill{flex:none}
+  .fact{padding:9px 8px;font-size:14px;min-height:40px}
+  .factions{gap:0;max-width:none;justify-content:space-between}
+  .fplat{margin-left:0}
+  .platpill{padding:8px 13px}
+  .platpills{gap:8px}
+  /* floating buttons + toast kept clear of content */
+  .composefab{right:16px;bottom:16px;width:54px;height:54px}
+  .askfab{left:16px;bottom:16px}
+  .askpanel{left:12px;right:12px;width:auto;max-width:none;bottom:78px;max-height:calc(100dvh - 150px)}
+  .toast{left:12px;right:12px;transform:none;text-align:center;white-space:normal;bottom:88px;max-width:none}
+  /* compose modal — bigger controls */
+  .cplat{padding:9px 14px 9px 8px;font-size:14px}
+  .composeplats .cplatrow{gap:10px}
+  .cmx{width:32px;height:32px;font-size:13px}
+  .askclose{padding:8px 12px;font-size:17px}
+  .composefoot{flex-wrap:wrap;row-gap:8px}
+  .composefoot .btn{margin-left:auto;flex:none}
+  /* data views — collapse + horizontal-scroll wide tables */
+  .profhero{flex-wrap:wrap;gap:14px;padding:16px}
+  .profhero>.btn{flex:1 0 100%;justify-content:center}
+  .tbl{min-width:640px}
+  .ideachips .scorepill{margin-left:0}
+  /* touch-friendly controls + no iOS input zoom (16px) */
+  .btn{padding:11px 16px;min-height:42px}
+  .btn-sm{padding:9px 14px;font-size:13.5px;min-height:40px}
+  .achip{padding:9px 14px}
+  .fcbox input,.fcbox .btn-sm{padding:11px 14px}
+  .field input,.field textarea,.field select,.abar input,.fcbox input{font-size:16px}
+}

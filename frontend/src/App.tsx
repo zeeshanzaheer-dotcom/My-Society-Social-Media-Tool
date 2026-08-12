@@ -87,9 +87,6 @@ export default function App() {
               { key: "publish", ico: "🚀", label: "Publish log" },
               { key: "analytics", ico: "📊", label: "Analytics" },
               { key: "analyst", ico: "🤖", label: "AI Analyst", sub: "Ask about your performance" },
-            ]} />
-          <NavMenu id="settings" label="Settings" tab={tab} nav={nav} menu={menu} setMenu={setMenu}
-            items={[
               { key: "connectors", ico: "🔌", label: "Connectors", sub: "Channels & integrations" },
               { key: "brand", ico: "🧠", label: "Brand Brain" },
             ]} />
@@ -117,8 +114,8 @@ export default function App() {
       {tab === "connectors" && <ConnectorsView {...ctx} />}
       {tab === "profile" && <ProfileView {...ctx} goTab={setTab} />}
 
-      <AskBubble />
-      <ComposeFab bump={bump} toast={toast} />
+      {tab !== "analyst" && <AskBubble />}
+      {tab !== "analyst" && <ComposeFab bump={bump} toast={toast} />}
       {toastMsg &&<div className={"toast" + (toastMsg.bad ? " bad" : "")}>{toastMsg.msg}</div>}
     </div>
   );
