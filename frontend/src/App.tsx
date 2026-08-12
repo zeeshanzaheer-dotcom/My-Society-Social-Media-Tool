@@ -118,8 +118,96 @@ export default function App() {
       {tab === "profile" && <ProfileView {...ctx} goTab={setTab} />}
 
       <AskBubble />
+      <ComposeFab bump={bump} toast={toast} />
       {toastMsg &&<div className={"toast" + (toastMsg.bad ? " bad" : "")}>{toastMsg.msg}</div>}
     </div>
+  );
+}
+
+/* ================= Compose FAB — create a post (media + platforms) ================= */
+function ComposeFab({ bump, toast }: { bump: () => void; toast: (m: string, bad?: boolean) => void }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [media, setMedia] = useState<string[]>([]);      // data URLs (images and/or a video)
+  const [plats, setPlats] = useState<string[]>(["linkedin"]);
+  const [busy, setBusy] = useState(false);
+  const imgRef = useRef<HTMLInputElement>(null);
+  const vidRef = useRef<HTMLInputElement>(null);
+
+  const addFiles = (list: FileList | null) => {
+    if (!list) return;
+    Array.from(list).slice(0, 6).forEach((f) => {
+      if (f.size > 12 * 1024 * 1024) { toast(`${f.name} is over 12MB — skipped`, true); return; }
+      const r = new FileReader();
+      r.onload = () => setMedia((m) => (m.length >= 6 ? m : [...m, String(r.result)]));
+      r.readAsDataURL(f);
+    });
+  };
+  const togglePlat = (p: string) => setPlats((s) => (s.includes(p) ? s.filter((x) => x !== p) : [...s, p]));
+  const canPost = (text.trim() !== "" || media.length > 0) && plats.length > 0 && !busy;
+  const post = async () => {
+    if (!canPost) return;
+    setBusy(true);
+    try {
+      await api.feedCreate(text.trim(), media.length ? JSON.stringify(media) : "", plats);
+      setText(""); setMedia([]); setPlats(["linkedin"]); setOpen(false);
+      toast(`Posted to ${plats.length} platform${plats.length > 1 ? "s" : ""}`);
+      bump();
+    } catch (e: any) { toast(e.message || "Couldn't post", true); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <>
+      {open && (
+        <div className="composeoverlay" onClick={() => !busy && setOpen(false)}>
+          <div className="composecard" onClick={(e) => e.stopPropagation()}>
+            <div className="composehead"><b>Create a post</b><button className="askclose" onClick={() => setOpen(false)} title="Close">✕</button></div>
+            <div className="composebody">
+              <div className="composerow">
+                <div className="avatar-sm" style={{ background: "#6E62D6" }}>ZZ</div>
+                <textarea autoFocus placeholder="What's happening across your network?" value={text} onChange={(e) => setText(e.target.value)} rows={3} />
+              </div>
+
+              {media.length > 0 && (
+                <div className={"composemedia n" + Math.min(media.length, 4)}>
+                  {media.map((u, i) => (
+                    <div className="cmthumb" key={i}>
+                      {isVideoUrl(u) ? <video src={u} /> : <img src={u} alt="" />}
+                      <button className="cmx" title="Remove" onClick={() => setMedia((m) => m.filter((_, j) => j !== i))}>✕</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="composetools">
+                <button className="ctoolbtn" onClick={() => imgRef.current?.click()}>🖼 Photo(s)</button>
+                <button className="ctoolbtn" onClick={() => vidRef.current?.click()}>🎬 Video</button>
+                <input ref={imgRef} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.currentTarget.value = ""; }} />
+                <input ref={vidRef} type="file" accept="video/*" hidden onChange={(e) => { addFiles(e.target.files); e.currentTarget.value = ""; }} />
+              </div>
+
+              <div className="composeplats">
+                <div className="tiny" style={{ fontWeight: 800, marginBottom: 8 }}>Post to</div>
+                <div className="cplatrow">
+                  {ALL_PLATFORMS.map((p) => (
+                    <button key={p} className={"cplat" + (plats.includes(p) ? " on" : "")} onClick={() => togglePlat(p)}>
+                      <span className={`acc ${p}`} style={{ width: 18, height: 18, borderRadius: 5 }}><PlatSvg p={p} size={12} /></span>
+                      {PLAT_LABEL[p] || p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="composefoot">
+              <span className="tiny">{plats.length ? `Cross-posting to ${plats.length}` : "Pick at least one platform"}</span>
+              <button className="btn btn-primary" disabled={!canPost} onClick={post}>{busy ? "Posting…" : "Post"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      <button className="composefab" title="Create a post" onClick={() => setOpen(true)}>✏️</button>
+    </>
   );
 }
 
@@ -235,19 +323,36 @@ function mediaLabel(m: string) {
 }
 // an uploaded file is stored as a data:/http URL; a seeded post uses a themed keyword
 const isUploadedMedia = (m: string) => m.startsWith("data:") || m.startsWith("http");
+const isVideoUrl = (u: string) => u.startsWith("data:video") || /\.(mp4|webm|mov)(\?|$)/i.test(u);
 
-function HomeView({ tick, toast, following }: Ctx & { goTab: (t: any) => void; following: string[] }) {
+// Renders a post's media: a themed keyword (seeded), a single upload, or a JSON
+// array of uploads (one image / multiple images / a video) as a gallery.
+function FeedMedia({ m }: { m: string }) {
+  if (m.startsWith("[")) {
+    let arr: string[] = [];
+    try { arr = JSON.parse(m); } catch { arr = []; }
+    arr = arr.filter(Boolean);
+    if (!arr.length) return null;
+    return (
+      <div className={"fgallery n" + Math.min(arr.length, 4)}>
+        {arr.slice(0, 4).map((u, i) => (isVideoUrl(u) ? <video key={i} src={u} controls /> : <img key={i} src={u} alt="" />))}
+      </div>
+    );
+  }
+  if (isUploadedMedia(m)) {
+    return isVideoUrl(m) ? <video className="fimg" src={m} controls /> : <img className="fimg" src={m} alt="" />;
+  }
+  return <div className={"fmedia media-" + m}>{mediaLabel(m)}</div>;
+}
+
+function HomeView({ tick, toast }: Ctx & { goTab: (t: any) => void; following: string[] }) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
-  const [composer, setComposer] = useState("");
-  const [media, setMedia] = useState("");            // data URL of an uploaded photo/video
-  const [cmenu, setCmenu] = useState(false);          // the composer "⋯" menu
   const [open, setOpen] = useState<number | null>(null);
   const [comments, setComments] = useState<Record<number, FeedComment[]>>({});
   const [reply, setReply] = useState("");
   const [plat, setPlat] = useState("all");
   // posts with a like/repost mid-flight: the poll must not clobber their optimistic state
   const dirty = useRef<Set<number>>(new Set());
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = () => api.feed().then((fresh: FeedPost[]) =>
     setPosts((prev) => fresh.map((fp) => {
@@ -257,29 +362,8 @@ function HomeView({ tick, toast, following }: Ctx & { goTab: (t: any) => void; f
     })),
   ).catch(() => {});
   useEffect(() => { load(); }, [tick]);
-  // close the composer "⋯" menu on any outside click
-  useEffect(() => {
-    const h = () => setCmenu(false);
-    document.addEventListener("click", h);
-    return () => document.removeEventListener("click", h);
-  }, []);
-
-  const onFile = (e: any) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    if (f.size > 8 * 1024 * 1024) { toast("That file is over 8MB — pick a smaller one", true); e.target.value = ""; return; }
-    const r = new FileReader();
-    r.onload = () => setMedia(String(r.result));
-    r.readAsDataURL(f);
-    e.target.value = "";
-  };
 
   const patch = (id: number, fn: (p: FeedPost) => FeedPost) => setPosts((ps) => ps.map((x) => (x.id === id ? fn(x) : x)));
-  const post = async () => {
-    if (!composer.trim()) return;
-    try { await api.feedCreate(composer.trim(), media); setComposer(""); setMedia(""); toast("Posted to your network"); load(); }
-    catch (e: any) { toast(e.message, true); }
-  };
   const toggleFeed = async (p: FeedPost, call: (id: number) => Promise<any>, optimistic: (x: FeedPost) => FeedPost) => {
     dirty.current.add(p.id);
     patch(p.id, optimistic);
@@ -313,36 +397,6 @@ function HomeView({ tick, toast, following }: Ctx & { goTab: (t: any) => void; f
     <div className="feedsolo">
       <div className="feedmain">
         <h2 className="feedhead">Home <span className="tiny" style={{ fontWeight: 700 }}>· your network, every platform</span></h2>
-        <div className="composer card">
-          <div className="avatar-sm" style={{ background: "#6E62D6" }}>ZZ</div>
-          <div style={{ flex: 1 }}>
-            <textarea placeholder="What's happening across your network?" value={composer} onChange={(e) => setComposer(e.target.value)} rows={2} />
-            {media && (
-              <div className="cpreview">
-                {media.startsWith("data:video") ? <video src={media} controls /> : <img src={media} alt="upload preview" />}
-                <button className="cpreview-x" title="Remove" onClick={() => setMedia("")}>×</button>
-              </div>
-            )}
-            <div className="composer-actions">
-              <span className="tiny">🐺 Posts to your network feed</span>
-              <div className="composer-right">
-                <div className="menu-wrap" onClick={(e) => e.stopPropagation()}>
-                  <button className="ctool" title="More" onClick={() => setCmenu((v) => !v)}>⋯</button>
-                  {cmenu && (
-                    <div className="dropdown cmenu">
-                      <div className="dd-label">Add to your post</div>
-                      <button className="dd-item" onClick={() => { fileRef.current?.click(); setCmenu(false); }}>
-                        <span className="dd-ico">🖼</span><span className="dd-txt">Upload media<small>Photo or video</small></span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-                <button className="btn btn-primary btn-sm" onClick={post} disabled={!composer.trim()}>Post</button>
-              </div>
-            </div>
-            <input ref={fileRef} type="file" accept="image/*,video/*" hidden onChange={onFile} />
-          </div>
-        </div>
 
         <div className="platpills feedplats">
           {platforms.map((pf) => (
@@ -352,7 +406,7 @@ function HomeView({ tick, toast, following }: Ctx & { goTab: (t: any) => void; f
           ))}
         </div>
 
-        {shown.length === 0 && <div className="empty">Nothing here yet — try “For you”, or another platform.</div>}
+        {shown.length === 0 && <div className="empty">Nothing on this platform yet — try another, or post something.</div>}
         {shown.map((p) => (
           <div className="fpost" key={p.id}>
             <div className="avatar-sm" style={{ background: p.author_color }}>{p.author_initials}</div>
@@ -361,12 +415,8 @@ function HomeView({ tick, toast, following }: Ctx & { goTab: (t: any) => void; f
                 <b>{p.author_name}</b><span className="fhandle">@{p.author_handle}</span><span className="fdot">·</span><span className="ftime">{relTime(p.created_at)}</span>
                 <span className={`fplat ${p.platform}`} title={`posted on ${p.platform}`}>{p.platform === "wolfie" ? "🐺" : <PlatSvg p={p.platform} size={13} />}</span>
               </div>
-              <div className="ftext">{p.text}</div>
-              {p.media && (isUploadedMedia(p.media)
-                ? (p.media.startsWith("data:video")
-                    ? <video className="fimg" src={p.media} controls />
-                    : <img className="fimg" src={p.media} alt="" />)
-                : <div className={"fmedia media-" + p.media}>{mediaLabel(p.media)}</div>)}
+              {p.text && <div className="ftext">{p.text}</div>}
+              {p.media && <FeedMedia m={p.media} />}
               <div className="factions">
                 <button className="fact" onClick={() => toggle(p)}>💬 <span>{p.comments_count}</span></button>
                 <button className={"fact" + (p.reposted ? " on-rt" : "")} onClick={() => repost(p)}>🔁 <span>{p.reposts}</span></button>

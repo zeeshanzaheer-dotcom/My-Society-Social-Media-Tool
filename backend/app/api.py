@@ -92,8 +92,9 @@ class BrandEdit(BaseModel):
 
 
 class FeedNew(BaseModel):
-    text: str
+    text: str = ""
     media: str = ""
+    platforms: list[str] = []
 
 
 class FeedComment(BaseModel):
@@ -528,19 +529,27 @@ def feed_list():
 
 @router.post("/feed")
 def feed_create(body: FeedNew):
-    if not body.text.strip():
-        raise HTTPException(400, "Say something before posting.")
+    text = body.text.strip()
+    if not text and not body.media:
+        raise HTTPException(400, "Add something before posting.")
+    # cross-post: one feed entry per selected platform (falls back to linkedin)
+    platforms = [p for p in (body.platforms or []) if p] or ["linkedin"]
     conn = get_conn()
     try:
         now = utcnow_iso()
-        cur = conn.execute(
-            "INSERT INTO feed_posts (author_name, author_handle, author_initials, author_color, platform, "
-            "text, media, likes, reposts, comments_count, liked, reposted, created_at) "
-            "VALUES (?,?,?,?,?,?,?,0,0,0,0,0,?)",
-            ("Zeeshan Zaheer", "zeeshan", "ZZ", "#6E62D6", "linkedin", body.text.strip(), body.media, now),
-        )
+        ids: list[int] = []
+        for plat in platforms:
+            cur = conn.execute(
+                "INSERT INTO feed_posts (author_name, author_handle, author_initials, author_color, platform, "
+                "text, media, likes, reposts, comments_count, liked, reposted, created_at) "
+                "VALUES (?,?,?,?,?,?,?,0,0,0,0,0,?)",
+                ("Zeeshan Zaheer", "zeeshan", "ZZ", "#6E62D6", plat, text, body.media, now),
+            )
+            ids.append(cur.lastrowid)
         conn.commit()
-        return row_to_dict(conn.execute("SELECT * FROM feed_posts WHERE id = ?", (cur.lastrowid,)).fetchone())
+        qs = ",".join("?" * len(ids))
+        return rows_to_list(conn.execute(
+            f"SELECT * FROM feed_posts WHERE id IN ({qs}) ORDER BY id DESC", ids).fetchall())
     finally:
         conn.close()
 

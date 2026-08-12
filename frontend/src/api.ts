@@ -77,7 +77,7 @@ export const api = {
   updateBrand: (id: number, b: any) => req("PATCH", `/brands/${id}`, b),
   metaCheck: () => req("GET", "/integrations/meta/check"),
   feed: () => req("GET", "/feed"),
-  feedCreate: (text: string, media = "") => req("POST", "/feed", { text, media }),
+  feedCreate: (text: string, media = "", platforms: string[] = []) => req("POST", "/feed", { text, media, platforms }),
   feedLike: (id: number) => req("POST", `/feed/${id}/like`, {}),
   feedRepost: (id: number) => req("POST", `/feed/${id}/repost`, {}),
   feedComments: (id: number) => req("GET", `/feed/${id}/comments`),
