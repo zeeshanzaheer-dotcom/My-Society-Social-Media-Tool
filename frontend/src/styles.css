@@ -258,6 +258,8 @@ button{font-family:inherit;cursor:pointer}
 .feedtabs>button.on{color:var(--ink);border-bottom-color:var(--coral)}
 .feedtabs>button:hover{color:var(--ink)}
 .platpills{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap;padding:6px 0}
+.feedplats{margin-left:0;padding:2px 0 12px;margin-bottom:10px;border-bottom:1px solid var(--border)}
+.platpill .acc{flex:none}
 .platpill{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);background:var(--surface);border-radius:20px;padding:4px 11px;font-size:12.5px;font-weight:700;color:var(--ink-2);text-transform:capitalize}
 .platpill.on{background:var(--coral-soft);border-color:transparent;color:var(--coral-ink)}
 .platpill:hover{border-color:var(--border-2)}
