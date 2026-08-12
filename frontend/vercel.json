@@ -1,6 +1,6 @@
 {
-  "$comment": "Replace the destination host with your deployed backend's public URL (e.g. the Railway domain), keeping the /api/:path* suffix. This proxies the app's API calls to the backend so the browser sees same-origin (no CORS).",
+  "$comment": "The app calls /api/* (relative); this rewrite proxies those to the Railway backend so the browser stays same-origin (no CORS). To change backends, swap the destination host, keeping the /api/:path* suffix.",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://REPLACE-WITH-BACKEND-URL/api/:path*" }
+    { "source": "/api/:path*", "destination": "https://my-society-social-media-tool-production.up.railway.app/api/:path*" }
   ]
 }
