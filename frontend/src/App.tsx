@@ -68,13 +68,10 @@ export default function App() {
   return (
     <div className="app">
       <div className="top">
-        <div className="brand-logo" onClick={() => nav("home")} title="Home">
-          <div className="mark">🐺</div>
-          <div className="brandname">My Society<small>Growth OS</small></div>
-        </div>
-        <div className="brand-chip">
-          <span className="ava" style={{ background: brand.color }}>{brand.initials}</span>
-          <b>{brand.name}</b>
+        <div className="brand-logo solo" onClick={() => nav("home")} title="Home">
+          <svg className="wmark" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" aria-label="Wolfie">
+            <path d="M18 24 L37 78 L50 47 L63 78 L82 24" />
+          </svg>
         </div>
         <div className="spacer" />
         <div className="menus">
