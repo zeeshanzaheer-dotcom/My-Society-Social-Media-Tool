@@ -121,7 +121,78 @@ export default function App() {
   );
 }
 
-/* ================= Compose FAB — create a post (media + platforms) ================= */
+/* ================= Inline composer (desktop) — X-style create-post box ================= */
+function InlineComposer({ toast, onPosted }: { toast: (m: string, bad?: boolean) => void; onPosted: () => void }) {
+  const [text, setText] = useState("");
+  const [media, setMedia] = useState<string[]>([]);
+  const [plats, setPlats] = useState<string[]>(["linkedin"]);
+  const [busy, setBusy] = useState(false);
+  const imgRef = useRef<HTMLInputElement>(null);
+  const vidRef = useRef<HTMLInputElement>(null);
+
+  const addFiles = (list: FileList | null) => {
+    if (!list) return;
+    Array.from(list).slice(0, 6).forEach((f) => {
+      if (f.size > 12 * 1024 * 1024) { toast(`${f.name} is over 12MB — skipped`, true); return; }
+      const r = new FileReader();
+      r.onload = () => setMedia((m) => (m.length >= 6 ? m : [...m, String(r.result)]));
+      r.readAsDataURL(f);
+    });
+  };
+  const togglePlat = (p: string) => setPlats((s) => (s.includes(p) ? s.filter((x) => x !== p) : [...s, p]));
+  const canPost = (text.trim() !== "" || media.length > 0) && plats.length > 0 && !busy;
+  const post = async () => {
+    if (!canPost) return;
+    setBusy(true);
+    try {
+      await api.feedCreate(text.trim(), media.length ? JSON.stringify(media) : "", plats);
+      setText(""); setMedia([]);
+      toast(`Posted to ${plats.length} platform${plats.length > 1 ? "s" : ""}`);
+      onPosted();
+    } catch (e: any) { toast(e.message || "Couldn't post", true); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="composer card composer-inline">
+      <div className="avatar-sm" style={{ background: "#6E62D6" }}>ZZ</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <textarea
+          className="citext" placeholder="What's happening?" rows={1} value={text}
+          onChange={(e) => { setText(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
+        />
+        {media.length > 0 && (
+          <div className={"composemedia n" + Math.min(media.length, 4)}>
+            {media.map((u, i) => (
+              <div className="cmthumb" key={i}>
+                {isVideoUrl(u) ? <video src={u} /> : <img src={u} alt="" />}
+                <button className="cmx" title="Remove" onClick={() => setMedia((m) => m.filter((_, j) => j !== i))}>✕</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="cbar">
+          <div className="ctools">
+            <button className="citool" title="Add photos" onClick={() => imgRef.current?.click()}>🖼</button>
+            <button className="citool" title="Add video" onClick={() => vidRef.current?.click()}>🎬</button>
+            <span className="cbar-sep" />
+            {ALL_PLATFORMS.map((p) => (
+              <button key={p} className={"citogp" + (plats.includes(p) ? " on" : "")}
+                title={(plats.includes(p) ? "Posting to " : "Post to ") + (PLAT_LABEL[p] || p)} onClick={() => togglePlat(p)}>
+                <span className={`acc ${p}`} style={{ width: 22, height: 22, borderRadius: 6 }}><PlatSvg p={p} size={13} /></span>
+              </button>
+            ))}
+          </div>
+          <button className="btn btn-primary" disabled={!canPost} onClick={post}>{busy ? "Posting…" : "Post"}</button>
+        </div>
+        <input ref={imgRef} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.currentTarget.value = ""; }} />
+        <input ref={vidRef} type="file" accept="video/*" hidden onChange={(e) => { addFiles(e.target.files); e.currentTarget.value = ""; }} />
+      </div>
+    </div>
+  );
+}
+
+/* ================= Compose FAB — create a post (media + platforms), mobile ================= */
 function ComposeFab({ bump, toast }: { bump: () => void; toast: (m: string, bad?: boolean) => void }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
@@ -396,6 +467,8 @@ function HomeView({ tick, toast }: Ctx & { goTab: (t: any) => void; following: s
     <div className="feedsolo">
       <div className="feedmain">
         <h2 className="feedhead">Home <span className="tiny" style={{ fontWeight: 700 }}>· your network, every platform</span></h2>
+
+        <InlineComposer toast={toast} onPosted={load} />
 
         <div className="platpills feedplats">
           {platforms.map((pf) => (
