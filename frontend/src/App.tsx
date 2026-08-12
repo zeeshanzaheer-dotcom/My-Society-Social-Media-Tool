@@ -103,12 +103,6 @@ export default function App() {
           </button>
           {menu === "notifs" && <NotificationsDropdown bump={bump} unread={st.unread} />}
         </div>
-        <div className="role">
-          {(["Creator", "Manager"] as const).map((r) => (
-            <button key={r} className={role === r ? "on" : ""} onClick={() => setRole(r)}>{r}</button>
-          ))}
-        </div>
-        <button className="btn btn-ghost btn-sm" onClick={() => run(() => api.reset(), "Demo data reset")}>Reset</button>
         <button className={"profbtn" + (tab === "profile" ? " on" : "")} title="My Profile — Zeeshan Zaheer" onClick={() => setTab("profile")}>
           <span className="profava">ZZ</span>
         </button>
