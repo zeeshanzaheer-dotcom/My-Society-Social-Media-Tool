@@ -150,22 +150,46 @@ export default function App() {
   );
 }
 
-/* ================= Right rail (desktop) — Create shortcuts + popular feed ================= */
-function RightRail({ tick, tab, goTab }: { tick: number; tab: string; goTab: (t: any) => void }) {
+/* ================= Right rail (desktop) — suggestions, trends, popular feed ================= */
+function RightRail({ tick, goTab }: { tick: number; tab: string; goTab: (t: any) => void }) {
   const [feed, setFeed] = useState<FeedPost[]>([]);
-  useEffect(() => { api.feed().then(setFeed).catch(() => {}); }, [tick]);
+  const [recs, setRecs] = useState<any[]>([]);
+  const [an, setAn] = useState<any>(null);
+  useEffect(() => {
+    api.feed().then(setFeed).catch(() => {});
+    api.recommendations().then(setRecs).catch(() => {});
+    api.analytics().then(setAn).catch(() => {});
+  }, [tick]);
   const popular = [...feed].sort((a, b) => (b.likes + b.reposts) - (a.likes + a.reposts)).slice(0, 5);
+  const topics = (an?.topics || []) as any[];
+  const maxTopic = Math.max(1, ...topics.map((t) => t.score));
+
   return (
     <aside className="rightnav">
       <div className="railsec card">
-        <div className="railhead">Create</div>
-        <button className={"sideitem" + (tab === "ideas" ? " active" : "")} onClick={() => goTab("ideas")}>
-          <span className="side-ico">💡</span><span className="side-txt">Ideas &amp; Trends<small>Turn signals into drafts</small></span>
-        </button>
-        <button className={"sideitem" + (tab === "create" ? " active" : "")} onClick={() => goTab("create")}>
-          <span className="side-ico">✨</span><span className="side-txt">Compose<small>Draft &amp; generate a post</small></span>
-        </button>
+        <div className="railhead">✨ Content suggestions</div>
+        {recs.slice(0, 3).map((r, i) => (
+          <button className="recitem" key={i} onClick={() => goTab("ideas")}>
+            <div className="recchips"><span className="pill draft">{r.pillar}</span><span className="scorepill">{r.score}</span></div>
+            <b className="rectitle">{r.title}</b>
+            <div className="tiny recwhy">{r.why}</div>
+          </button>
+        ))}
+        {recs.length === 0 && <div className="tiny" style={{ padding: "6px 10px" }}>Publish a few posts to unlock suggestions.</div>}
       </div>
+
+      <div className="railsec card">
+        <div className="railhead">📈 Trending topics</div>
+        {topics.slice(0, 5).map((t) => (
+          <div className="barrow" key={t.pillar}>
+            <div className="n">{t.pillar}</div>
+            <div className="bar"><div className="barfill coral" style={{ width: `${(t.score / maxTopic) * 100}%` }} /></div>
+            <div className="v">{t.score}</div>
+          </div>
+        ))}
+        {topics.length === 0 && <div className="tiny" style={{ padding: "6px 10px" }}>No signal yet — publish to learn.</div>}
+      </div>
+
       <div className="railsec card">
         <div className="railhead">Popular in your workspace</div>
         {popular.map((p) => (
