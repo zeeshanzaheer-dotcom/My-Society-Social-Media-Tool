@@ -478,6 +478,44 @@ function PlatSvg({ p, size = 12 }: { p: string; size?: number }) {
   return <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" style={{ display: "block" }}><path d={d} /></svg>;
 }
 
+// Platform filter as a single dropdown (All Platforms + every social network).
+function PlatformFilter({ plat, setPlat }: { plat: string; setPlat: (p: string) => void }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const h = () => setOpen(false);
+    document.addEventListener("click", h);
+    return () => document.removeEventListener("click", h);
+  }, [open]);
+  const opts = ["all", ...ALL_PLATFORMS];
+  const tile = (p: string, size: number) =>
+    p === "all"
+      ? <span className="platf-all" style={{ width: size + 6, height: size + 6 }}>🌐</span>
+      : <span className={`acc ${p}`} style={{ width: size + 6, height: size + 6, borderRadius: 5 }}><PlatSvg p={p} size={size} /></span>;
+  return (
+    <div className="platfilter">
+      <div className="menu-wrap" onClick={(e) => e.stopPropagation()}>
+        <button className={"platfbtn" + (open ? " on" : "")} onClick={() => setOpen((v) => !v)}>
+          {tile(plat, 13)}
+          <span>{plat === "all" ? "All Platforms" : (PLAT_LABEL[plat] || plat)}</span>
+          <span className="chev">▾</span>
+        </button>
+        {open && (
+          <div className="dropdown platfdd">
+            <div className="dd-label">Filter by platform</div>
+            {opts.map((p) => (
+              <button key={p} className={"dd-item" + (plat === p ? " active" : "")} onClick={() => { setPlat(p); setOpen(false); }}>
+                {tile(p, 13)}
+                <span className="dd-txt">{p === "all" ? "All Platforms" : (PLAT_LABEL[p] || p)}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 type Ctx = {
   tick: number; role: "Manager" | "Creator"; toast: (m: string, bad?: boolean) => void;
   run: (fn: () => Promise<any>, ok?: string) => Promise<void>; accounts: Account[]; brand: Brand;
@@ -577,13 +615,7 @@ function HomeView({ tick, toast }: Ctx & { goTab: (t: any) => void; following: s
 
         <InlineComposer toast={toast} onPosted={load} />
 
-        <div className="platpills feedplats">
-          {platforms.map((pf) => (
-            <button key={pf} className={"platpill" + (plat === pf ? " on" : "")} onClick={() => setPlat(pf)}>
-              {pf === "all" ? "All Platforms" : <><span className={`acc ${pf}`} style={{ width: 18, height: 18, borderRadius: 5 }}><PlatSvg p={pf} size={12} /></span> {PLAT_LABEL[pf] || pf}</>}
-            </button>
-          ))}
-        </div>
+        <PlatformFilter plat={plat} setPlat={setPlat} />
 
         {shown.length === 0 && <div className="empty">Nothing on this platform yet — try another, or post something.</div>}
         {shown.map((p) => (
@@ -664,13 +696,7 @@ function ProfileView({ tick, goTab }: Ctx & { goTab: (t: any) => void }) {
         <button className="btn btn-primary btn-sm" onClick={() => goTab("create")}>✨ New post</button>
       </div>
 
-      <div className="platpills" style={{ margin: "16px 0 4px" }}>
-        {platforms.map((pf) => (
-          <button key={pf} className={"platpill" + (plat === pf ? " on" : "")} onClick={() => setPlat(pf)}>
-            {pf === "all" ? "All Platforms" : <><span className={`acc ${pf}`} style={{ width: 18, height: 18, borderRadius: 5 }}><PlatSvg p={pf} size={12} /></span> {PLAT_LABEL[pf] || pf}</>}
-          </button>
-        ))}
-      </div>
+      <div style={{ margin: "16px 0 4px" }}><PlatformFilter plat={plat} setPlat={setPlat} /></div>
 
       {shown.length === 0 && <div className="empty">No posts on this platform yet.</div>}
       <div className="profgrid">
