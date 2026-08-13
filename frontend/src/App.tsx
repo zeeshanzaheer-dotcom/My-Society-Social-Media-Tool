@@ -209,12 +209,15 @@ function RightRail({ tick, goTab }: { tick: number; tab: string; goTab: (t: any)
 }
 
 /* ================= Inline composer (desktop) — X-style create-post box ================= */
-function InlineComposer({ toast, onPosted }: { toast: (m: string, bad?: boolean) => void; onPosted: () => void }) {
+function InlineComposer({ toast, onPosted, brand }: { toast: (m: string, bad?: boolean) => void; onPosted: () => void; brand: Brand }) {
+  const [mode, setMode] = useState<"human" | "ai">("human");
   const [text, setText] = useState("");
   const [media, setMedia] = useState<string[]>([]);
   const [plats, setPlats] = useState<string[]>(["linkedin"]);
   const [busy, setBusy] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
+  const [prompt, setPrompt] = useState("");     // AI mode: what to write about
+  const [gening, setGening] = useState(false);
   const imgRef = useRef<HTMLInputElement>(null);
   const vidRef = useRef<HTMLInputElement>(null);
 
@@ -241,21 +244,53 @@ function InlineComposer({ toast, onPosted }: { toast: (m: string, bad?: boolean)
     setBusy(true);
     try {
       await api.feedCreate(text.trim(), media.length ? JSON.stringify(media) : "", plats);
-      setText(""); setMedia([]);
+      setText(""); setMedia([]); setPrompt("");
       toast(`Posted to ${plats.length} platform${plats.length > 1 ? "s" : ""}`);
       onPosted();
     } catch (e: any) { toast(e.message || "Couldn't post", true); }
     finally { setBusy(false); }
+  };
+  const generate = async () => {
+    if (!prompt.trim() || gening) return;
+    setGening(true);
+    try {
+      const r = await api.generate({ brand_id: brand.id, format: "static", topic: prompt.trim(), objective: "engagement" });
+      setText(r.caption || r.title || "");
+      toast(`Drafted with the ${r.provider === "anthropic" ? "Claude" : "built-in"} writer`);
+    } catch (e: any) { toast(e.message || "Couldn't generate", true); }
+    finally { setGening(false); }
   };
 
   return (
     <div className="composer card composer-inline">
       <div className="avatar-sm" style={{ background: "#6E62D6" }}>ZZ</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <textarea
-          className="citext" placeholder="What's happening?" rows={1} value={text}
-          onChange={(e) => { setText(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
-        />
+        <div className="cmode">
+          <button className={mode === "human" ? "on" : ""} onClick={() => setMode("human")}>✍️ Human</button>
+          <button className={mode === "ai" ? "on" : ""} onClick={() => setMode("ai")}>🤖 AI</button>
+        </div>
+
+        {mode === "ai" ? (
+          <>
+            <div className="aiask">
+              <span className="aiava">🤖</span>
+              <input className="aiprompt" placeholder="Ask AI to create a post — e.g. “Golden Visa myths for investors”" value={prompt}
+                disabled={gening} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => e.key === "Enter" && generate()} />
+              <button className="btn btn-primary btn-sm" disabled={!prompt.trim() || gening} onClick={generate}>{gening ? "Writing…" : "✨ Generate"}</button>
+            </div>
+            {text && (
+              <div className="aidraft">
+                <div className="aidraft-tag">✨ AI draft — edit it, then post</div>
+                <textarea className="citext" rows={4} value={text} onChange={(e) => setText(e.target.value)} />
+              </div>
+            )}
+          </>
+        ) : (
+          <textarea
+            className="citext" placeholder="What's happening?" rows={1} value={text}
+            onChange={(e) => { setText(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
+          />
+        )}
         {media.length > 0 && (
           <div className={"composemedia n" + Math.min(media.length, 4)}>
             {media.map((u, i) => (
@@ -288,12 +323,58 @@ function InlineComposer({ toast, onPosted }: { toast: (m: string, bad?: boolean)
             )}
           </div>
           <div className="cbar-right">
+            {mode === "ai" && text && <button className="btn btn-sm" disabled={gening} onClick={generate}>↻ Regenerate</button>}
             <span className="tiny">{plats.length ? `${plats.length} platform${plats.length > 1 ? "s" : ""}` : "Pick a platform"}</span>
             <button className="btn btn-primary" disabled={!canPost} onClick={post}>{busy ? "Posting…" : "Post"}</button>
           </div>
         </div>
         <input ref={imgRef} type="file" accept="image/*" multiple hidden onChange={(e) => { addFiles(e.target.files); e.currentTarget.value = ""; }} />
         <input ref={vidRef} type="file" accept="video/*" hidden onChange={(e) => { addFiles(e.target.files); e.currentTarget.value = ""; }} />
+      </div>
+    </div>
+  );
+}
+
+// Content-format filter (next to Workspace).
+const FORMATS = [
+  { key: "all", label: "All formats", ico: "▦" },
+  { key: "text", label: "Text", ico: "📝" },
+  { key: "image", label: "Image", ico: "🖼" },
+  { key: "video", label: "Reel / Video", ico: "🎬" },
+];
+function postFormat(m: string): string {
+  if (!m) return "text";
+  if (m === "video" || m.startsWith("data:video") || (m.startsWith("[") && m.indexOf("data:video") >= 0)) return "video";
+  return "image";
+}
+function ContentFormatFilter({ fmt, setFmt }: { fmt: string; setFmt: (f: string) => void }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const h = () => setOpen(false);
+    document.addEventListener("click", h);
+    return () => document.removeEventListener("click", h);
+  }, [open]);
+  const cur = FORMATS.find((f) => f.key === fmt) || FORMATS[0];
+  return (
+    <div className="platfilter">
+      <div className="menu-wrap" onClick={(e) => e.stopPropagation()}>
+        <button className={"platfbtn" + (open ? " on" : "")} onClick={() => setOpen((v) => !v)}>
+          <span className="platf-all" style={{ width: 19, height: 19 }}>{cur.ico}</span>
+          <span>{cur.label}</span>
+          <span className="chev">▾</span>
+        </button>
+        {open && (
+          <div className="dropdown platfdd">
+            <div className="dd-label">Content format</div>
+            {FORMATS.map((f) => (
+              <button key={f.key} className={"dd-item" + (fmt === f.key ? " active" : "")} onClick={() => { setFmt(f.key); setOpen(false); }}>
+                <span className="platf-all" style={{ width: 20, height: 20 }}>{f.ico}</span>
+                <span className="dd-txt">{f.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -597,12 +678,13 @@ function FeedMedia({ m }: { m: string }) {
   return <div className={"fmedia media-" + m}>{mediaLabel(m)}</div>;
 }
 
-function HomeView({ tick, toast }: Ctx & { goTab: (t: any) => void; following: string[] }) {
+function HomeView({ tick, toast, brand }: Ctx & { goTab: (t: any) => void; following: string[] }) {
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [open, setOpen] = useState<number | null>(null);
   const [comments, setComments] = useState<Record<number, FeedComment[]>>({});
   const [reply, setReply] = useState("");
   const [plats, setPlats] = useState<string[]>([]);   // selected platforms (empty = all)
+  const [fmt, setFmt] = useState("all");              // content-format filter
   // posts with a like/repost mid-flight: the poll must not clobber their optimistic state
   const dirty = useRef<Set<number>>(new Set());
 
@@ -642,18 +724,22 @@ function HomeView({ tick, toast }: Ctx & { goTab: (t: any) => void; following: s
     if (res.mirror?.detail) toast("↪ " + res.mirror.detail);
   };
 
-  const shown = posts.filter((p) => plats.length === 0 || plats.includes(p.platform));
+  const shown = posts.filter((p) =>
+    (plats.length === 0 || plats.includes(p.platform)) &&
+    (fmt === "all" || postFormat(p.media) === fmt),
+  );
 
   return (
     <div className="feedsolo">
       <div className="feedmain">
         <h2 className="feedhead">Home <span className="tiny" style={{ fontWeight: 700 }}>· your network, every platform</span></h2>
 
-        <InlineComposer toast={toast} onPosted={load} />
+        <InlineComposer toast={toast} onPosted={load} brand={brand} />
 
         <div className="filterrow">
           <PlatformFilter selected={plats} setSelected={setPlats} />
           <WorkspaceSwitcher toast={toast} />
+          <ContentFormatFilter fmt={fmt} setFmt={setFmt} />
         </div>
 
         {shown.length === 0 && <div className="empty">Nothing on this platform yet — try another, or post something.</div>}
