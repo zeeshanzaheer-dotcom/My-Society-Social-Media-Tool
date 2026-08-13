@@ -86,11 +86,13 @@ export default function App() {
         </div>
         <div className="spacer" />
         <div className="menus">
-          <NavMenu id="create" label="Create" tab={tab} nav={nav} menu={menu} setMenu={setMenu}
-            items={[
-              { key: "ideas", ico: "💡", label: "Ideas & Trends", sub: "Turn signals into drafts" },
-              { key: "create", ico: "✨", label: "Compose", sub: "Draft & generate a post" },
-            ]} />
+          <div className="create-menu-m">
+            <NavMenu id="create" label="Create" tab={tab} nav={nav} menu={menu} setMenu={setMenu}
+              items={[
+                { key: "ideas", ico: "💡", label: "Ideas & Trends", sub: "Turn signals into drafts" },
+                { key: "create", ico: "✨", label: "Compose", sub: "Draft & generate a post" },
+              ]} />
+          </div>
           <div className="tools-menu-m">
             <NavMenu id="tools" label="Tools" tab={tab} nav={nav} menu={menu} setMenu={setMenu}
               items={[
@@ -138,12 +140,47 @@ export default function App() {
           {tab === "connectors" && <ConnectorsView {...ctx} />}
           {tab === "profile" && <ProfileView {...ctx} goTab={setTab} />}
         </main>
+        <RightRail tick={tick} tab={tab} goTab={setTab} />
       </div>
 
       {tab !== "analyst" && <AskBubble />}
       {tab !== "analyst" && <ComposeFab bump={bump} toast={toast} />}
       {toastMsg &&<div className={"toast" + (toastMsg.bad ? " bad" : "")}>{toastMsg.msg}</div>}
     </div>
+  );
+}
+
+/* ================= Right rail (desktop) — Create shortcuts + popular feed ================= */
+function RightRail({ tick, tab, goTab }: { tick: number; tab: string; goTab: (t: any) => void }) {
+  const [feed, setFeed] = useState<FeedPost[]>([]);
+  useEffect(() => { api.feed().then(setFeed).catch(() => {}); }, [tick]);
+  const popular = [...feed].sort((a, b) => (b.likes + b.reposts) - (a.likes + a.reposts)).slice(0, 5);
+  return (
+    <aside className="rightnav">
+      <div className="railsec card">
+        <div className="railhead">Create</div>
+        <button className={"sideitem" + (tab === "ideas" ? " active" : "")} onClick={() => goTab("ideas")}>
+          <span className="side-ico">💡</span><span className="side-txt">Ideas &amp; Trends<small>Turn signals into drafts</small></span>
+        </button>
+        <button className={"sideitem" + (tab === "create" ? " active" : "")} onClick={() => goTab("create")}>
+          <span className="side-ico">✨</span><span className="side-txt">Compose<small>Draft &amp; generate a post</small></span>
+        </button>
+      </div>
+      <div className="railsec card">
+        <div className="railhead">Popular in your workspace</div>
+        {popular.map((p) => (
+          <button className="popitem" key={p.id} onClick={() => goTab("home")}>
+            <div className="avatar-xs" style={{ background: p.author_color }}>{p.author_initials}</div>
+            <div className="popbody">
+              <b>{p.author_name}</b>
+              <div className="poptext">{p.text}</div>
+              <div className="tiny">❤️ {p.likes} · 🔁 {p.reposts}</div>
+            </div>
+          </button>
+        ))}
+        {popular.length === 0 && <div className="tiny" style={{ padding: "6px 10px" }}>No posts yet.</div>}
+      </div>
+    </aside>
   );
 }
 
