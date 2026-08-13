@@ -478,8 +478,8 @@ function PlatSvg({ p, size = 12 }: { p: string; size?: number }) {
   return <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" aria-hidden="true" style={{ display: "block" }}><path d={d} /></svg>;
 }
 
-// Platform filter as a single dropdown (All Platforms + every social network).
-function PlatformFilter({ plat, setPlat }: { plat: string; setPlat: (p: string) => void }) {
+// Platform filter — a "Platforms" dropdown with a checkbox per network (multi-select).
+function PlatformFilter({ selected, setSelected }: { selected: string[]; setSelected: (p: string[]) => void }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -487,26 +487,63 @@ function PlatformFilter({ plat, setPlat }: { plat: string; setPlat: (p: string) 
     document.addEventListener("click", h);
     return () => document.removeEventListener("click", h);
   }, [open]);
-  const opts = ["all", ...ALL_PLATFORMS];
-  const tile = (p: string, size: number) =>
-    p === "all"
-      ? <span className="platf-all" style={{ width: size + 6, height: size + 6 }}>🌐</span>
-      : <span className={`acc ${p}`} style={{ width: size + 6, height: size + 6, borderRadius: 5 }}><PlatSvg p={p} size={size} /></span>;
+  const toggle = (p: string) => setSelected(selected.includes(p) ? selected.filter((x) => x !== p) : [...selected, p]);
   return (
     <div className="platfilter">
       <div className="menu-wrap" onClick={(e) => e.stopPropagation()}>
         <button className={"platfbtn" + (open ? " on" : "")} onClick={() => setOpen((v) => !v)}>
-          {tile(plat, 13)}
-          <span>{plat === "all" ? "All Platforms" : (PLAT_LABEL[plat] || plat)}</span>
+          <span className="platf-all" style={{ width: 19, height: 19 }}>🌐</span>
+          <span>Platforms{selected.length ? ` · ${selected.length}` : ""}</span>
           <span className="chev">▾</span>
         </button>
         {open && (
           <div className="dropdown platfdd">
             <div className="dd-label">Filter by platform</div>
-            {opts.map((p) => (
-              <button key={p} className={"dd-item" + (plat === p ? " active" : "")} onClick={() => { setPlat(p); setOpen(false); }}>
-                {tile(p, 13)}
-                <span className="dd-txt">{p === "all" ? "All Platforms" : (PLAT_LABEL[p] || p)}</span>
+            {ALL_PLATFORMS.map((p) => (
+              <button key={p} className="dd-item chkitem" onClick={() => toggle(p)}>
+                <span className={"chkbox" + (selected.includes(p) ? " on" : "")}>{selected.includes(p) ? "✓" : ""}</span>
+                <span className={`acc ${p}`} style={{ width: 19, height: 19, borderRadius: 5 }}><PlatSvg p={p} size={12} /></span>
+                <span className="dd-txt">{PLAT_LABEL[p] || p}</span>
+              </button>
+            ))}
+            {selected.length > 0 && <button className="dd-clear" onClick={() => setSelected([])}>Clear — show all</button>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Workspace switcher — Allegiance, A-Living, AskWolfie.
+const WORKSPACES = [
+  { id: "allegiance", name: "Allegiance", sub: "Real Estate", initials: "AR", color: "#2B2230" },
+  { id: "aliving", name: "A-Living", sub: "Lifestyle", initials: "AL", color: "#0FB5A1" },
+  { id: "askwolfie", name: "AskWolfie", sub: "Personal brand", initials: "AW", color: "#8B5CF6" },
+];
+function WorkspaceSwitcher({ toast }: { toast: (m: string, bad?: boolean) => void }) {
+  const [open, setOpen] = useState(false);
+  const [ws, setWs] = useState(WORKSPACES[0]);
+  useEffect(() => {
+    if (!open) return;
+    const h = () => setOpen(false);
+    document.addEventListener("click", h);
+    return () => document.removeEventListener("click", h);
+  }, [open]);
+  return (
+    <div className="platfilter">
+      <div className="menu-wrap" onClick={(e) => e.stopPropagation()}>
+        <button className={"platfbtn wsbtn" + (open ? " on" : "")} onClick={() => setOpen((v) => !v)}>
+          <span className="wsava" style={{ background: ws.color }}>{ws.initials}</span>
+          <span>{ws.name}</span>
+          <span className="chev">▾</span>
+        </button>
+        {open && (
+          <div className="dropdown platfdd wsdd">
+            <div className="dd-label">Workspace</div>
+            {WORKSPACES.map((w) => (
+              <button key={w.id} className={"dd-item" + (ws.id === w.id ? " active" : "")} onClick={() => { setWs(w); setOpen(false); toast(`Switched to ${w.name}`); }}>
+                <span className="wsava" style={{ background: w.color }}>{w.initials}</span>
+                <span className="dd-txt">{w.name}<small>{w.sub}</small></span>
               </button>
             ))}
           </div>
@@ -565,7 +602,7 @@ function HomeView({ tick, toast }: Ctx & { goTab: (t: any) => void; following: s
   const [open, setOpen] = useState<number | null>(null);
   const [comments, setComments] = useState<Record<number, FeedComment[]>>({});
   const [reply, setReply] = useState("");
-  const [plat, setPlat] = useState("all");
+  const [plats, setPlats] = useState<string[]>([]);   // selected platforms (empty = all)
   // posts with a like/repost mid-flight: the poll must not clobber their optimistic state
   const dirty = useRef<Set<number>>(new Set());
 
@@ -605,8 +642,7 @@ function HomeView({ tick, toast }: Ctx & { goTab: (t: any) => void; following: s
     if (res.mirror?.detail) toast("↪ " + res.mirror.detail);
   };
 
-  const platforms = ["all", ...ALL_PLATFORMS];
-  const shown = posts.filter((p) => plat === "all" || p.platform === plat);
+  const shown = posts.filter((p) => plats.length === 0 || plats.includes(p.platform));
 
   return (
     <div className="feedsolo">
@@ -615,7 +651,10 @@ function HomeView({ tick, toast }: Ctx & { goTab: (t: any) => void; following: s
 
         <InlineComposer toast={toast} onPosted={load} />
 
-        <PlatformFilter plat={plat} setPlat={setPlat} />
+        <div className="filterrow">
+          <PlatformFilter selected={plats} setSelected={setPlats} />
+          <WorkspaceSwitcher toast={toast} />
+        </div>
 
         {shown.length === 0 && <div className="empty">Nothing on this platform yet — try another, or post something.</div>}
         {shown.map((p) => (
@@ -665,14 +704,13 @@ function HomeView({ tick, toast }: Ctx & { goTab: (t: any) => void; following: s
 /* ================= MY PROFILE — your posts across every platform ================= */
 function ProfileView({ tick, goTab }: Ctx & { goTab: (t: any) => void }) {
   const [data, setData] = useState<any>(null);
-  const [plat, setPlat] = useState("all");
+  const [plats, setPlats] = useState<string[]>([]);
   useEffect(() => { api.profile().then(setData).catch(() => {}); }, [tick]);
   if (!data) return <div className="empty">Loading your profile…</div>;
 
   const p = data.profile;
   const posts: any[] = data.posts || [];
-  const platforms = ["all", ...ALL_PLATFORMS];
-  const shown = posts.filter((x) => plat === "all" || x.platform === plat);
+  const shown = posts.filter((x) => plats.length === 0 || plats.includes(x.platform));
 
   return (
     <div>
@@ -696,7 +734,7 @@ function ProfileView({ tick, goTab }: Ctx & { goTab: (t: any) => void }) {
         <button className="btn btn-primary btn-sm" onClick={() => goTab("create")}>✨ New post</button>
       </div>
 
-      <div style={{ margin: "16px 0 4px" }}><PlatformFilter plat={plat} setPlat={setPlat} /></div>
+      <div style={{ margin: "16px 0 4px" }}><PlatformFilter selected={plats} setSelected={setPlats} /></div>
 
       {shown.length === 0 && <div className="empty">No posts on this platform yet.</div>}
       <div className="profgrid">
