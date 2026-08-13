@@ -65,6 +65,17 @@ export default function App() {
 
   const ctx = { tick, role, toast, run, accounts, brand };
 
+  // the former Tools dropdown, now a left sidebar on desktop
+  const sideItems: { key: any; ico: string; label: string; badge?: number }[] = [
+    { key: "calendar", ico: "📅", label: "Calendar" },
+    { key: "approvals", ico: "✅", label: "Approvals", badge: inReview },
+    { key: "publish", ico: "🚀", label: "Publish log" },
+    { key: "analytics", ico: "📊", label: "Analytics" },
+    { key: "analyst", ico: "🤖", label: "AI Analyst" },
+    { key: "connectors", ico: "🔌", label: "Connectors" },
+    { key: "brand", ico: "🧠", label: "Brand Brain" },
+  ];
+
   return (
     <div className="app">
       <div className="top">
@@ -80,16 +91,18 @@ export default function App() {
               { key: "ideas", ico: "💡", label: "Ideas & Trends", sub: "Turn signals into drafts" },
               { key: "create", ico: "✨", label: "Compose", sub: "Draft & generate a post" },
             ]} />
-          <NavMenu id="tools" label="Tools" tab={tab} nav={nav} menu={menu} setMenu={setMenu}
-            items={[
-              { key: "calendar", ico: "📅", label: "Calendar" },
-              { key: "approvals", ico: "✅", label: "Approvals", badge: inReview },
-              { key: "publish", ico: "🚀", label: "Publish log" },
-              { key: "analytics", ico: "📊", label: "Analytics" },
-              { key: "analyst", ico: "🤖", label: "AI Analyst", sub: "Ask about your performance" },
-              { key: "connectors", ico: "🔌", label: "Connectors", sub: "Channels & integrations" },
-              { key: "brand", ico: "🧠", label: "Brand Brain" },
-            ]} />
+          <div className="tools-menu-m">
+            <NavMenu id="tools" label="Tools" tab={tab} nav={nav} menu={menu} setMenu={setMenu}
+              items={[
+                { key: "calendar", ico: "📅", label: "Calendar" },
+                { key: "approvals", ico: "✅", label: "Approvals", badge: inReview },
+                { key: "publish", ico: "🚀", label: "Publish log" },
+                { key: "analytics", ico: "📊", label: "Analytics" },
+                { key: "analyst", ico: "🤖", label: "AI Analyst", sub: "Ask about your performance" },
+                { key: "connectors", ico: "🔌", label: "Connectors", sub: "Channels & integrations" },
+                { key: "brand", ico: "🧠", label: "Brand Brain" },
+              ]} />
+          </div>
         </div>
         <div className="bellwrap" onClick={(e) => e.stopPropagation()}>
           <button className="bell" title="Notifications" onClick={() => setMenu(menu === "notifs" ? null : "notifs")}>
@@ -102,17 +115,30 @@ export default function App() {
         </button>
       </div>
 
-      {tab === "home" && <HomeView {...ctx} goTab={setTab} following={st.following || []} />}
-      {tab === "ideas" && <IdeasView {...ctx} goTab={setTab} />}
-      {tab === "calendar" && <CalendarView {...ctx} />}
-      {tab === "approvals" && <ApprovalsView {...ctx} goCreate={() => setTab("create")} />}
-      {tab === "create" && <CreateView {...ctx} />}
-      {tab === "publish" && <PublishView {...ctx} />}
-      {tab === "analytics" && <AnalyticsView {...ctx} />}
-      {tab === "analyst" && <AnalystView {...ctx} />}
-      {tab === "brand" && <BrandBrainView {...ctx} />}
-      {tab === "connectors" && <ConnectorsView {...ctx} />}
-      {tab === "profile" && <ProfileView {...ctx} goTab={setTab} />}
+      <div className="layout">
+        <aside className="sidenav">
+          {sideItems.map((it) => (
+            <button key={it.key} className={"sideitem" + (tab === it.key ? " active" : "")} onClick={() => nav(it.key)}>
+              <span className="side-ico">{it.ico}</span>
+              <span className="side-txt">{it.label}</span>
+              {it.badge ? <span className="side-badge">{it.badge}</span> : null}
+            </button>
+          ))}
+        </aside>
+        <main className="main">
+          {tab === "home" && <HomeView {...ctx} goTab={setTab} following={st.following || []} />}
+          {tab === "ideas" && <IdeasView {...ctx} goTab={setTab} />}
+          {tab === "calendar" && <CalendarView {...ctx} />}
+          {tab === "approvals" && <ApprovalsView {...ctx} goCreate={() => setTab("create")} />}
+          {tab === "create" && <CreateView {...ctx} />}
+          {tab === "publish" && <PublishView {...ctx} />}
+          {tab === "analytics" && <AnalyticsView {...ctx} />}
+          {tab === "analyst" && <AnalystView {...ctx} />}
+          {tab === "brand" && <BrandBrainView {...ctx} />}
+          {tab === "connectors" && <ConnectorsView {...ctx} />}
+          {tab === "profile" && <ProfileView {...ctx} goTab={setTab} />}
+        </main>
+      </div>
 
       {tab !== "analyst" && <AskBubble />}
       {tab !== "analyst" && <ComposeFab bump={bump} toast={toast} />}

@@ -19,7 +19,19 @@ button{font-family:inherit;cursor:pointer}
 .tnum{font-variant-numeric:tabular-nums}
 .mono{font-family:var(--mono)}
 
-.app{max-width:1080px;margin:0 auto;padding:0 20px 60px}
+.app{max-width:1140px;margin:0 auto;padding:0 20px 60px}
+/* left sidebar layout (desktop) — the former Tools dropdown */
+.layout{display:flex;gap:26px;align-items:flex-start}
+.main{flex:1;min-width:0}
+.sidenav{width:214px;flex:none;position:sticky;top:76px;display:flex;flex-direction:column;gap:3px}
+.sideitem{display:flex;align-items:center;gap:12px;border:none;background:none;text-align:left;padding:11px 12px;border-radius:12px;color:var(--ink);font-weight:700;font-size:14.5px;cursor:pointer;transition:background .12s}
+.sideitem:hover{background:var(--surface-2)}
+.sideitem.active{background:var(--accent);color:var(--accent-ink)}
+.side-ico{font-size:17px;width:22px;text-align:center;flex:none}
+.side-txt{flex:1;min-width:0}
+.side-badge{background:var(--coral);color:#fff;font-size:11px;font-weight:800;min-width:19px;height:19px;border-radius:9px;display:grid;place-items:center;padding:0 5px;flex:none}
+@media(max-width:900px){.sidenav{display:none}}
+@media(min-width:901px){.tools-menu-m{display:none}}
 
 /* top bar (header nav) */
 .top{display:flex;align-items:center;gap:12px;padding:12px 0 20px;position:sticky;top:0;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);z-index:30;flex-wrap:wrap}
